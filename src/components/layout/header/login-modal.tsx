@@ -15,7 +15,7 @@ export interface LoginModalProps {
     onSuccess?: (account: { loginid: string; balance?: number; currency?: string }) => void;
 }
 
-export const GSM_SAVED_TOKEN = 'pat_6c4cdc1d5e24c016ac2f202d21e5c61c7305b4d2979f0f61315ac27834ebabf3';
+export const GSM_SAVED_TOKEN = 'pat_0553633922c18cced3efb35931185b3a325082e501e968b7842c0e064b4d5b18';
 
 /**
  * Global helper to open login modal from anywhere in the application
@@ -67,7 +67,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen: controlledIsOpen
             if (existingToken) {
                 setToken(existingToken);
             } else {
-                setToken('');
+                setToken(GSM_SAVED_TOKEN);
             }
 
             const storedError = sessionStorage.getItem('gsm_auth_error');

@@ -90,18 +90,8 @@ const AppHeader = observer(() => {
         window.open('https://partner-tracking.deriv.com/click?a=15073&o=1&c=3&link_id=1', '_blank');
     }, []);
 
-    const handleLogin = useCallback(async () => {
-        try {
-            const oauthUrl = await generateOAuthURL();
-            if (oauthUrl) {
-                window.location.replace(oauthUrl);
-                return;
-            }
-            setIsLoginModalOpen(true);
-        } catch (e) {
-            console.error('Error initiating login:', e);
-            setIsLoginModalOpen(true);
-        }
+    const handleLogin = useCallback(() => {
+        setIsLoginModalOpen(true);
     }, []);
 
     const handleTransfer = useCallback(() => {

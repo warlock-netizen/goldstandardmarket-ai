@@ -419,6 +419,71 @@ class APIBase {
         setIsAuthorizing(true);
         try {
             localStorage.setItem('authToken', trimmed);
+
+            if (trimmed.startsWith('pat_') || trimmed.startsWith('ory_at_')) {
+                // Modern Deriv Bearer / Personal Access Token flow
+                const authInfo = {
+                    access_token: trimmed,
+                    token_type: 'bearer',
+                    created_at: Date.now(),
+                };
+                sessionStorage.setItem('auth_info', JSON.stringify(authInfo));
+                localStorage.setItem('auth_info', JSON.stringify(authInfo));
+
+                const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
+                const accounts = await DerivWSAccountsService.fetchAccountsList(trimmed);
+                if (!accounts || accounts.length === 0) {
+                    setIsAuthorizing(false);
+                    return { success: false, error: 'No Deriv trading accounts found for this token.' };
+                }
+
+                // Prefer demo account or current selection, fallback to first account
+                const existingLoginId = localStorage.getItem('active_loginid');
+                const targetAccount =
+                    (existingLoginId && accounts.find(a => a.account_id === existingLoginId)) ||
+                    accounts.find(a => a.account_type === 'demo') ||
+                    accounts[0];
+
+                const activeLoginId = targetAccount.account_id;
+                localStorage.setItem('active_loginid', activeLoginId);
+                sessionStorage.setItem('active_loginid', activeLoginId);
+                localStorage.setItem('account_type', targetAccount.account_type);
+
+                // Build client.accounts mapping for header switcher
+                const clientAccounts: Record<string, any> = {};
+                accounts.forEach(acc => {
+                    clientAccounts[acc.account_id] = {
+                        token: trimmed,
+                        currency: acc.currency,
+                        is_virtual: acc.account_type === 'demo' ? 1 : 0,
+                        balance: acc.balance,
+                        session_token: trimmed,
+                    };
+                });
+                localStorage.setItem('client.accounts', JSON.stringify(clientAccounts));
+
+                // Initialize socket with OTP url
+                await this.init(true);
+
+                setIsAuthorizing(false);
+                this.account_info = {
+                    loginid: targetAccount.account_id,
+                    balance: parseFloat(targetAccount.balance) || 0,
+                    currency: targetAccount.currency,
+                    email: '',
+                    fullname: targetAccount.account_id,
+                    is_virtual: targetAccount.account_type === 'demo' ? 1 : 0,
+                };
+
+                return {
+                    success: true,
+                    loginid: targetAccount.account_id,
+                    balance: parseFloat(targetAccount.balance) || 0,
+                    currency: targetAccount.currency,
+                };
+            }
+
+            // Legacy token flow
             if (!this.api || this.api.connection?.readyState !== 1) {
                 await this.init(true);
             }
