@@ -139,7 +139,15 @@ export const resetOAuthCredentials = () => {
 
 // Helper to check if we're on production domains
 export const isProduction = () => {
+    if (typeof window === 'undefined') return true;
     const hostname = window.location.hostname;
+    if (
+        hostname.includes('vercel.app') ||
+        hostname.includes('goldstandardmarket.site') ||
+        hostname.includes('goldstandardmarket.com')
+    ) {
+        return true;
+    }
     const productionDomains = Object.values(PRODUCTION_DOMAINS) as string[];
     return productionDomains.includes(hostname);
 };
@@ -147,16 +155,7 @@ export const isProduction = () => {
 export const isLocal = () => /localhost(:\d+)?$/i.test(window.location.hostname);
 
 const getDefaultServerURL = () => {
-    const isProductionEnv = isProduction();
-
-    try {
-        return isProductionEnv ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
-    } catch (error) {
-        console.error('Error in getDefaultServerURL:', error);
-    }
-
-    // Production defaults to demov2, staging/preview defaults to qa194 (demo)
-    return isProductionEnv ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
+    return WS_SERVERS.PRODUCTION;
 };
 
 /**
@@ -186,8 +185,7 @@ export const getSocketURL = async (): Promise<string> => {
         console.error('[WS] Error in getSocketURL:', e);
     }
 
-    const defaultUrl = isProduction() ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
-    return defaultUrl;
+    return WS_SERVERS.PRODUCTION;
 };
 
 export const getDebugServiceWorker = () => {

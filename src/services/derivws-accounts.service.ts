@@ -52,12 +52,48 @@ export class DerivWSAccountsService {
     private static otpFetchPromises: Map<string, Promise<string>> = new Map();
 
     /**
-     * Gets the DerivWS base URL based on environment
-     * @returns DerivWS base URL (e.g., "https://api.derivws.com/trading/v1/")
+     * Gets the DerivWS base URL
+     * Always uses production DerivWS endpoint for live/demo accounts
+     * @returns DerivWS base URL
      */
     private static getDerivWSBaseURL(): string {
-        const environment = isProduction() ? 'production' : 'staging';
-        return brandConfig.platform.derivws.url[environment];
+        return brandConfig.platform.derivws.url.production || 'https://api.derivws.com/trading/v1/';
+    }
+
+    /**
+     * Transient retry wrapper matching production live_index logic
+     * Falls back to /api/derivws proxy on network/CORS error
+     */
+    private static async fetchWithTransientRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+        const transientStatuses = new Set([502, 503, 504]);
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const response = await fetch(url, options);
+                if (!transientStatuses.has(response.status) || attempt === maxRetries) {
+                    return response;
+                }
+            } catch (err) {
+                if (attempt === maxRetries) {
+                    try {
+                        const parsed = new URL(url);
+                        const proxyRes = await fetch('/api/derivws', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                path: parsed.pathname.replace(/^\/trading\/v1\/?/, ''),
+                                method: options.method || 'GET',
+                                headers: options.headers,
+                            }),
+                        });
+                        return proxyRes;
+                    } catch (_) {
+                        throw err;
+                    }
+                }
+            }
+            await new Promise(res => setTimeout(res, 500 * Math.pow(2, attempt - 1)));
+        }
+        return fetch(url, options);
     }
 
     /**
@@ -138,7 +174,7 @@ export class DerivWSAccountsService {
                 const optionsDir = brandConfig.platform.derivws.directories.options;
                 const endpoint = `${baseURL}${optionsDir}accounts`;
 
-                const response = await fetch(endpoint, {
+                const response = await this.fetchWithTransientRetry(endpoint, {
                     method: 'GET',
                     headers: {
                         Accept: 'application/json',
@@ -204,7 +240,7 @@ export class DerivWSAccountsService {
                 const optionsDir = brandConfig.platform.derivws.directories.options;
                 const endpoint = `${baseURL}${optionsDir}accounts/${accountId}/otp`;
 
-                const response = await fetch(endpoint, {
+                const response = await this.fetchWithTransientRetry(endpoint, {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',

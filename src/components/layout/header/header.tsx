@@ -15,7 +15,6 @@ import AccountSwitcher from './account-switcher';
 import MenuItems from './menu-items';
 import MobileMenu from './mobile-menu';
 import MarketTicker from './market-ticker';
-import LoginModal from './login-modal';
 import './header.scss';
 
 const AppHeader = observer(() => {
@@ -23,7 +22,6 @@ const AppHeader = observer(() => {
     const { isAuthorizing, activeLoginid, setIsAuthorizing, authData } = useApiBase();
     const { client } = useStore() ?? {};
     const [authTimeout, setAuthTimeout] = useState(false);
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const is_account_regenerating = client?.is_account_regenerating || false;
 
     // Detect OAuth callback on mount (before App.tsx cleans up the URL).
@@ -91,23 +89,15 @@ const AppHeader = observer(() => {
     }, []);
 
     const handleLogin = useCallback(async () => {
-        setIsAuthorizing(true);
         try {
-            const tokenToUse =
-                localStorage.getItem('authToken') ||
-                'pat_0553633922c18cced3efb35931185b3a325082e501e968b7842c0e064b4d5b18';
-            const { api_base } = await import('@/external/bot-skeleton/services/api/api-base');
-            const res = await api_base.authorizeWithToken(tokenToUse);
-            if (!res.success) {
-                setIsLoginModalOpen(true);
+            const oauthUrl = await generateOAuthURL();
+            if (oauthUrl) {
+                window.location.assign(oauthUrl);
             }
         } catch (e) {
             console.error('Error initiating login:', e);
-            setIsLoginModalOpen(true);
-        } finally {
-            setIsAuthorizing(false);
         }
-    }, [setIsAuthorizing]);
+    }, []);
 
     const handleTransfer = useCallback(() => {
         const transferCurrency = authData?.currency;
@@ -227,7 +217,6 @@ const AppHeader = observer(() => {
                 </Wrapper>
                 <Wrapper variant='right'>{renderAccountSection('right')}</Wrapper>
             </Header>
-            <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
         </>
     );
 });

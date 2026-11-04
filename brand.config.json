@@ -1,9 +1,9 @@
 {
     "brand_name": "Gold Standard Market",
-    "brand_domain": "goldstandardmarket.vercel.app",
+    "brand_domain": "goldstandardmarket-ai.vercel.app",
     "brand_hostname": {
-        "staging": "goldstandardmarket.vercel.app",
-        "production": "goldstandardmarket.vercel.app"
+        "staging": "goldstandardmarket-ai.vercel.app",
+        "production": "goldstandardmarket-ai.vercel.app"
     },
     "domain_name": "Gold Standard Market",
     "colors": {
@@ -73,11 +73,11 @@
         },
         "hostname": {
             "production": {
-                "com": "goldstandardmarket.vercel.app",
+                "com": "goldstandardmarket-ai.vercel.app",
                 "site": "goldstandardmarket.site"
             },
             "staging": {
-                "com": "goldstandardmarket.vercel.app",
+                "com": "goldstandardmarket-ai.vercel.app",
                 "site": "goldstandardmarket.site"
             }
         },

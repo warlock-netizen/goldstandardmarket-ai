@@ -215,19 +215,7 @@ async function handlePKCECallback(): Promise<boolean> {
     try {
         const result = await OAuthTokenExchangeService.exchangeCodeForToken(code);
 
-        if (result.error) {
-            console.error('[Auth] Token exchange failed:', result.error, result.error_description);
-            sessionStorage.setItem(
-                'gsm_auth_error',
-                `Token exchange failed: ${result.error_description || result.error}. Please use your API Token to log in.`
-            );
-            window.dispatchEvent(new CustomEvent('gsm:open-login', { detail: { error: result.error_description } }));
-            return true;
-        }
-
-        console.log('[Auth] Token exchange successful');
-
-        // Clean URL params
+        // Clean URL params immediately
         const url = new URL(window.location.href);
         url.searchParams.delete('code');
         url.searchParams.delete('state');
@@ -237,28 +225,13 @@ async function handlePKCECallback(): Promise<boolean> {
         }
         window.history.replaceState({}, '', url.toString());
 
-        // Clear old API instance to force reconnection with new authenticated URL
-        clearDerivApiInstance();
-
-        const storedToken = localStorage.getItem('authToken');
-        if (storedToken) {
-            import('@/external/bot-skeleton/services/api/api-base').then(async ({ api_base }) => {
-                if (storedToken.startsWith('a1-') || (!storedToken.startsWith('ory_at_') && storedToken.length < 50)) {
-                    // Classic Deriv token or Personal Access Token
-                    api_base.authorizeWithToken(storedToken).catch(err => {
-                        console.error('[Auth] Authorization with token failed:', err);
-                    });
-                } else {
-                    // OAuth2 PKCE access token: reconnect WebSocket with dynamic OTP URL
-                    try {
-                        await api_base.init(true);
-                    } catch (err) {
-                        console.error('[Auth] WebSocket re-init with OAuth2 OTP failed:', err);
-                    }
-                }
-            });
+        if (result.error) {
+            console.error('[Auth] Token exchange failed:', result.error, result.error_description);
+            sessionStorage.setItem('gsm_auth_error', `Token exchange failed: ${result.error_description || result.error}`);
+            return true;
         }
 
+        console.log('[Auth] Token exchange and connection initialization successful');
         return true;
     } catch (err) {
         console.error('[Auth] Token exchange error:', err);
@@ -285,7 +258,7 @@ function App() {
     // Handle account switching via URL parameter
     useAccountSwitching();
 
-    // Process OAuth callback on mount or auto-login with verified token
+    // Process OAuth callback on mount
     React.useEffect(() => {
         if (hasOldOAuthParams) {
             handleOldOAuthCallback();
@@ -293,16 +266,6 @@ function App() {
         } else if (hasPKCEParams) {
             handlePKCECallback().then(() => {
                 setAuthReady(true);
-            });
-        } else {
-            // Auto-login with user's verified token if not already authorized
-            const storedToken =
-                localStorage.getItem('authToken') ||
-                'pat_0553633922c18cced3efb35931185b3a325082e501e968b7842c0e064b4d5b18';
-            import('@/external/bot-skeleton/services/api/api-base').then(({ api_base }) => {
-                api_base.authorizeWithToken(storedToken).catch(err => {
-                    console.error('[Auth] Initial authorization error:', err);
-                });
             });
         }
     }, [hasOldOAuthParams, hasPKCEParams]);

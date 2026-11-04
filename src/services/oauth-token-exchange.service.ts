@@ -1,4 +1,5 @@
 import { clearCodeVerifier, getCodeVerifier, getOAuthClientId, getOAuthRedirectURI, isProduction, OAUTH_CLIENT_ID, OAUTH_REDIRECT_URI } from '@/components/shared';
+import { isDemoAccount } from '@/utils/account-helpers';
 import { ErrorLogger } from '@/utils/error-logger';
 import brandConfig from '../../brand.config.json';
 
@@ -32,12 +33,12 @@ interface AuthInfo {
  */
 export class OAuthTokenExchangeService {
     /**
-     * Get the OAuth2 base URL based on environment
-     * @returns OAuth2 base URL (staging or production)
+     * Get the OAuth2 base URL
+     * Always uses production auth.deriv.com for live and demo accounts
+     * @returns OAuth2 base URL
      */
     private static getOAuth2BaseURL(): string {
-        const environment = isProduction() ? 'production' : 'staging';
-        return brandConfig.platform.auth2_url[environment];
+        return brandConfig.platform.auth2_url.production || 'https://auth.deriv.com/oauth2/';
     }
 
     /**
@@ -214,53 +215,67 @@ export class OAuthTokenExchangeService {
                 try {
                     localStorage.removeItem('oauth_redirect_uri');
                     localStorage.removeItem('oauth_client_id');
-                } catch (_) {}
+                } catch (_) { }
 
-                if (!derivAccountId && accessToken) {
-                    try {
-                        const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
-                        const accounts = await DerivWSAccountsService.fetchAccountsList(accessToken);
-                        if (accounts && accounts.length > 0) {
-                            derivAccountId = accounts[0].account_id;
-                        }
-                    } catch (accErr) {
-                        console.warn('[OAuth] Could not fetch initial accounts list from DerivWS:', accErr);
-                    }
-                }
-
-                // Store authentication info in sessionStorage and localStorage
+                const tokenToUse = accessToken || derivToken;
                 const authInfo = {
-                    access_token: accessToken,
+                    access_token: tokenToUse,
                     deriv_token: derivToken,
                     token_type: (data.token_type as string) || 'bearer',
                     expires_in: (data.expires_in as number) || 3600,
                     expires_at: Date.now() + ((data.expires_in as number) || 3600) * 1000,
-                    scope: data.scope as string,
-                    refresh_token: data.refresh_token as string,
-                    account_id: derivAccountId,
+                    scope: (data.scope as string) || 'trade',
+                    refresh_token: (data.refresh_token as string) || '',
                 };
 
-                // Store as JSON string
                 const authInfoStr = JSON.stringify(authInfo);
                 sessionStorage.setItem('auth_info', authInfoStr);
                 try {
                     localStorage.setItem('auth_info', authInfoStr);
-                } catch (_) {}
+                } catch (_) { }
 
                 // Store in localStorage for bot-skeleton compatibility
-                const botToken = derivToken || accessToken;
-                localStorage.setItem('authToken', botToken);
-                if (derivAccountId) {
-                    localStorage.setItem('active_loginid', derivAccountId);
-                    const isDemo = derivAccountId.startsWith('VRT') || derivAccountId.startsWith('VRTC');
+                localStorage.setItem('authToken', tokenToUse);
+
+                try {
+                    const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
+                    const accounts = await DerivWSAccountsService.fetchAccountsList(tokenToUse);
+                    if (!accounts || accounts.length === 0) {
+                        ErrorLogger.error('OAuth', 'No accounts returned after token exchange');
+                        this.clearAuthInfo();
+                        return {
+                            error: 'no_accounts',
+                            error_description: 'No accounts available after successful authentication',
+                        };
+                    }
+
+                    DerivWSAccountsService.storeAccounts(accounts);
+                    const defaultAccount = accounts[0];
+                    derivAccountId = defaultAccount.account_id;
+                    localStorage.setItem('active_loginid', defaultAccount.account_id);
+                    const isDemo = isDemoAccount(defaultAccount.account_id);
                     localStorage.setItem('account_type', isDemo ? 'demo' : 'real');
+
                     const accountsList: Record<string, string> = {};
-                    accountsList[derivAccountId] = botToken;
+                    accounts.forEach(acc => {
+                        accountsList[acc.account_id] = tokenToUse;
+                    });
                     localStorage.setItem('accountsList', JSON.stringify(accountsList));
+
+                    ErrorLogger.info('OAuth', 'Accounts fetched and stored', { loginid: defaultAccount.account_id });
+
+                    try {
+                        await this.initializeAuthenticatedConnection();
+                    } catch (initErr) {
+                        ErrorLogger.error('OAuth', 'WebSocket initialization will continue in background', initErr);
+                    }
+                } catch (accErr) {
+                    ErrorLogger.error('OAuth', 'Error fetching accounts after token exchange', accErr);
                 }
 
                 ErrorLogger.info('OAuth', 'Token exchange successful', {
                     has_token1: !!derivToken,
+                    has_access_token: !!accessToken,
                     account_id: derivAccountId,
                 });
             }
@@ -272,6 +287,24 @@ export class OAuthTokenExchangeService {
                 error: 'network_error',
                 error_description: error instanceof Error ? error.message : 'Unknown error occurred',
             };
+        }
+    }
+
+    /**
+     * Initializes the authenticated WebSocket connection with retries
+     * Matching the exact pattern in production live_index.js
+     */
+    static async initializeAuthenticatedConnection(): Promise<void> {
+        const { api_base } = await import('@/external/bot-skeleton/services/api/api-base');
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                await api_base.init(true);
+                return;
+            } catch (err) {
+                ErrorLogger.error('OAuth', `WebSocket initialization attempt ${attempt} failed`, err);
+                if (attempt === 3) throw err;
+                await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+            }
         }
     }
 

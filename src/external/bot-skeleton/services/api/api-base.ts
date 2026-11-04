@@ -264,85 +264,58 @@ class APIBase {
         setIsAuthorizing(true);
 
         try {
-            // Send authorize with token from localStorage before calling balance
-            const authToken = localStorage.getItem('authToken');
-            let authorizedData: any = null;
-            if (authToken) {
-                try {
-                    const authResult = await this.api.authorize(authToken);
-                    if (authResult?.error) {
-                        console.error('[APIBase] Authorize error:', JSON.stringify(authResult.error));
-                    } else if (authResult?.authorize) {
-                        authorizedData = authResult.authorize;
-                    }
-                } catch (authErr) {
-                    console.error('[APIBase] Authorize call failed:', authErr);
-                }
+            const { balance, error } = await this.api.balance();
+            if (error) {
+                console.error('[APIBase] Balance query error:', error);
+                setIsAuthorizing(false);
+                return error;
             }
 
-            let balanceData: any = null;
-            try {
-                const { balance, error } = await this.api.balance();
-                if (!error && balance) {
-                    balanceData = balance;
-                }
-            } catch (err) {
-                console.warn('[APIBase] Optional balance call error:', err);
-            }
+            this.account_info = {
+                balance: balance?.balance,
+                currency: balance?.currency,
+                loginid: balance?.loginid,
+            };
+            this.token = balance?.loginid || '';
 
-            // Derive active account details from either balance or authorize response
-            const currentLoginid = balanceData?.loginid || authorizedData?.loginid || this.account_id;
-            const currentBalance = typeof balanceData?.balance === 'number'
-                ? balanceData.balance
-                : typeof authorizedData?.balance === 'number'
-                  ? authorizedData.balance
-                  : 0;
-            const currentCurrency = balanceData?.currency || authorizedData?.currency || 'USD';
-            const account_type = getAccountType(currentLoginid);
-            const is_virtual = authorizedData?.is_virtual ?? (account_type === 'real' ? 0 : 1);
+            const accountType = getAccountType(balance?.loginid);
+            const is_virtual = accountType === 'real' ? 0 : 1;
 
-            const currentAccount = currentLoginid
+            const singleAccount = balance?.loginid
                 ? {
-                      balance: currentBalance,
-                      currency: currentCurrency,
-                      is_virtual: is_virtual ? 1 : 0,
-                      loginid: currentLoginid,
+                      balance: balance.balance,
+                      currency: balance.currency || 'USD',
+                      is_virtual,
+                      loginid: balance.loginid,
                   }
                 : null;
 
-            // Build full account list from stored accounts or direct authorize account list
             const storedAccounts = DerivWSAccountsService.getStoredAccounts();
             let accountList: any[] = [];
             if (storedAccounts && storedAccounts.length > 0) {
                 accountList = storedAccounts
                     .filter(a => !a.status || a.status === 'active')
                     .map(a => ({
-                        balance: parseFloat(a.balance) || 0,
+                        balance: a.account_id === balance?.loginid ? (balance?.balance ?? 0) : (parseFloat(a.balance) || 0),
                         currency: a.currency || 'USD',
-                        is_virtual: a.account_type === 'demo' ? 1 : 0,
+                        is_virtual: isDemoAccount(a.account_id) ? 1 : 0,
                         loginid: a.account_id,
                     }));
-            } else if (Array.isArray(authorizedData?.account_list) && authorizedData.account_list.length > 0) {
-                accountList = authorizedData.account_list.map((a: any) => ({
-                    balance: a.loginid === currentLoginid ? currentBalance : 0,
-                    currency: a.currency || 'USD',
-                    is_virtual: a.is_virtual ?? (a.loginid.startsWith('VRT') ? 1 : 0),
-                    loginid: a.loginid,
-                }));
-            } else if (currentAccount) {
-                accountList = [currentAccount];
+            } else if (singleAccount) {
+                accountList = [singleAccount];
             }
 
-            setAccountList(accountList); // Observable stream
+            setAccountList(accountList);
             setAuthData({
-                balance: currentBalance,
-                currency: currentCurrency,
-                loginid: currentLoginid,
-                is_virtual: is_virtual ? 1 : 0,
+                balance: balance?.balance,
+                currency: balance?.currency,
+                loginid: balance?.loginid,
+                is_virtual,
                 account_list: accountList,
             });
 
-            if (is_virtual) {
+            const currentLoginid = balance?.loginid || this.account_id;
+            if (isDemoAccount(currentLoginid)) {
                 localStorage.setItem('account_type', 'demo');
             } else {
                 localStorage.setItem('account_type', 'real');
@@ -351,45 +324,28 @@ class APIBase {
             globalObserver.emit('api.authorize', {
                 account_list: accountList,
                 current_account: {
-                    loginid: currentLoginid,
-                    currency: currentCurrency,
-                    is_virtual: is_virtual ? 1 : 0,
-                    balance: currentBalance,
+                    loginid: balance?.loginid,
+                    currency: balance?.currency || 'USD',
+                    is_virtual,
+                    balance: typeof balance?.balance === 'number' ? balance.balance : undefined,
                 },
             });
 
-            // Update the WebSocket login ID in the client store
             const currentClientStore = globalObserver.getState('client.store');
-            if (currentClientStore && currentLoginid) {
-                currentClientStore.setWebSocketLoginId(currentLoginid);
-                currentClientStore.setLoginId(currentLoginid);
-                currentClientStore.setCurrency(currentCurrency);
-                currentClientStore.setBalance(currentBalance.toString());
+            if (currentClientStore && balance?.loginid) {
+                currentClientStore.setWebSocketLoginId(balance.loginid);
+                currentClientStore.setLoginId(balance.loginid);
+                if (balance.currency) currentClientStore.setCurrency(balance.currency);
+                if (typeof balance.balance === 'number') currentClientStore.setBalance(balance.balance.toString());
                 currentClientStore.setIsLoggedIn(true);
             }
 
             setIsAuthorized(true);
             this.is_authorized = true;
-            this.account_info = {
-                balance: currentBalance,
-                currency: currentCurrency,
-                loginid: currentLoginid,
-            };
-            this.token = currentLoginid;
-
             localStorage.setItem('client_account_details', JSON.stringify(accountList));
-            localStorage.setItem('client.country', authorizedData?.country || balanceData?.country || '');
-
-            if (currentLoginid) {
-                localStorage.setItem('active_loginid', currentLoginid);
-            }
-
-            if (authToken) {
-                const accountsMap: Record<string, string> = {};
-                accountList.forEach((acc: any) => {
-                    accountsMap[acc.loginid] = authToken;
-                });
-                localStorage.setItem('accountsList', JSON.stringify(accountsMap));
+            localStorage.setItem('client.country', balance?.country || '');
+            if (balance?.loginid) {
+                localStorage.setItem('active_loginid', balance.loginid);
             }
 
             if (this.has_active_symbols) {
