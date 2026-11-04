@@ -83,10 +83,24 @@ export const getOAuthRedirectURI = (): string => {
     if (typeof process !== 'undefined' && process.env?.REDIRECT_URI) {
         return process.env.REDIRECT_URI.trim().replace(/\/+$/, '');
     }
-    if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-        return VERCEL_OAUTH_REDIRECT_URI.replace(/\/+$/, '');
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        const origin = window.location.origin.replace(/\/+$/, '');
+
+        // Production site domain
+        if (hostname.endsWith('goldstandardmarket.site')) {
+            return OAUTH_REDIRECT_URI.replace(/\/+$/, '');
+        }
+
+        // Exact match for the legacy registered domain
+        if (hostname === 'goldstandardmarket.vercel.app') {
+            return VERCEL_OAUTH_REDIRECT_URI.replace(/\/+$/, '');
+        }
+
+        // For any active Vercel deployment (e.g. goldstandardmarket-ai.vercel.app) or custom domain,
+        // use the actual active origin so it exactly matches whatever domain is registered on Deriv
+        return origin;
     }
-    // Deriv developer portal has registered https://goldstandardmarket.site (no trailing slash)
     return OAUTH_REDIRECT_URI.replace(/\/+$/, '');
 };
 

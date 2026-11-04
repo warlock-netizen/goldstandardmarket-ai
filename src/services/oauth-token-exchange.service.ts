@@ -152,17 +152,43 @@ export class OAuthTokenExchangeService {
                 code_verifier: codeVerifier,
             });
 
-            const response = await fetch(tokenEndpoint, {
-                method: 'POST',
-                credentials: 'include', // Include cookies for session-based auth
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: requestBody.toString(),
-            });
+            let data: Record<string, unknown> | null = null;
+            try {
+                const response = await fetch(tokenEndpoint, {
+                    method: 'POST',
+                    credentials: 'include', // Include cookies for session-based auth
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: requestBody.toString(),
+                });
+                data = (await response.json()) as Record<string, unknown>;
+            } catch (directError) {
+                // If direct browser fetch failed (e.g. CORS block from unwhitelisted origin), fallback to serverless backend proxy
+                console.warn('[OAuth] Direct token exchange failed, falling back to /api/token-exchange proxy...', directError);
+                try {
+                    const proxyResponse = await fetch('/api/token-exchange', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            grant_type: 'authorization_code',
+                            code,
+                            client_id: clientId,
+                            redirect_uri: redirectUri,
+                            code_verifier: codeVerifier,
+                        }),
+                    });
+                    data = (await proxyResponse.json()) as Record<string, unknown>;
+                } catch (proxyError) {
+                    throw directError;
+                }
+            }
 
-            // Parse response
-            const data = await response.json() as Record<string, unknown>;
+            if (!data) {
+                throw new Error('Failed to retrieve token response from Deriv');
+            }
 
             // Check for errors in response
             if (data.error) {
