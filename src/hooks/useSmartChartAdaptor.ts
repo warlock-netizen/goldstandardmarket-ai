@@ -78,29 +78,53 @@ export const useSmartChartAdaptor = (): UseSmartChartAdaptorReturn => {
         };
     }, []);
 
-    // Initialize adapter - runs once when chart_api.api is available
+    // Initialize adapter - runs when chart_api.api is available or triggers its initialization
     useEffect(() => {
-        if (!adapterInitialized && chart_api.api) {
-            try {
-                const transport = createTransport();
-                const services = createServices();
-                const championAdapter = buildSmartchartsChampionAdapter(transport, services, {
-                    debug: true,
-                    subscriptionTimeout: 30000,
-                });
+        let isCancelled = false;
+        let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
-                if (isMountedRef.current) {
-                    setAdapter(championAdapter);
-                    setAdapterInitialized(true);
-                    setError(null);
-                }
-            } catch (err) {
-                if (isMountedRef.current) {
-                    setError(err instanceof Error ? err : new Error('Failed to initialize adapter'));
-                    setIsLoading(false);
+        const initAdapter = async () => {
+            if (adapterInitialized || isCancelled) return;
+
+            if (!chart_api.api) {
+                try {
+                    await chart_api.init();
+                } catch (e) {
+                    console.warn('[SmartCharts Hook] chart_api.init waiting...', e);
                 }
             }
-        }
+
+            if (chart_api.api && !isCancelled) {
+                try {
+                    const transport = createTransport();
+                    const services = createServices();
+                    const championAdapter = buildSmartchartsChampionAdapter(transport, services, {
+                        debug: true,
+                        subscriptionTimeout: 30000,
+                    });
+
+                    if (isMountedRef.current && !isCancelled) {
+                        setAdapter(championAdapter);
+                        setAdapterInitialized(true);
+                        setError(null);
+                    }
+                } catch (err) {
+                    if (isMountedRef.current && !isCancelled) {
+                        setError(err instanceof Error ? err : new Error('Failed to initialize adapter'));
+                        setIsLoading(false);
+                    }
+                }
+            } else if (!isCancelled) {
+                pollTimer = setTimeout(initAdapter, 500);
+            }
+        };
+
+        initAdapter();
+
+        return () => {
+            isCancelled = true;
+            if (pollTimer) clearTimeout(pollTimer);
+        };
     }, [adapterInitialized]);
 
     // Load chart data when adapter is initialized

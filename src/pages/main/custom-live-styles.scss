@@ -91,6 +91,11 @@ body.theme--dark,
         flex-direction: column;
         overflow: hidden auto;
 
+        &:empty {
+            background: transparent !important;
+            pointer-events: none !important;
+        }
+
         > * {
             flex: auto;
             min-width: 0;

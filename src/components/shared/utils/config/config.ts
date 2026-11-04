@@ -29,8 +29,8 @@ export const OAUTH_REDIRECT_URI = 'https://goldstandardmarket.site';
 export const WS_APP_ID = 342;
 
 export const WS_SERVERS = {
-    STAGING: `wss://ws.derivws.com/websockets/v3?app_id=${WS_APP_ID}`,
-    PRODUCTION: `wss://ws.derivws.com/websockets/v3?app_id=${WS_APP_ID}`,
+    STAGING: `${brandConfig.platform.derivws.url.staging}options/ws/public`.replace(/^http/, 'ws'),
+    PRODUCTION: `${brandConfig.platform.derivws.url.production}options/ws/public`.replace(/^http/, 'ws'),
 } as const;
 
 /**
@@ -168,21 +168,25 @@ const getDefaultServerURL = () => {
  * @returns WebSocket URL
  */
 export const getSocketURL = async (): Promise<string> => {
-    const defaultUrl = isProduction() ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
-
-    // Wait briefly for OAuth callback to complete (old flow stores token1 in localStorage)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('token1')) {
-        console.log('[WS] Old OAuth callback detected (token1), waiting for localStorage...');
-        for (let i = 0; i < 30; i++) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-            if (localStorage.getItem('authToken')) {
-                console.log('[WS] authToken found in localStorage');
-                break;
+    try {
+        const authInfoStr = sessionStorage.getItem('auth_info') || localStorage.getItem('auth_info');
+        if (authInfoStr) {
+            try {
+                const authInfo = JSON.parse(authInfoStr);
+                if (authInfo?.access_token) {
+                    const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
+                    const wsUrl = await DerivWSAccountsService.getAuthenticatedWebSocketURL(authInfo.access_token);
+                    if (wsUrl) return wsUrl;
+                }
+            } catch (err) {
+                console.warn('[WS] Could not get authenticated WebSocket URL from OAuth2 token:', err);
             }
         }
+    } catch (e) {
+        console.error('[WS] Error in getSocketURL:', e);
     }
 
+    const defaultUrl = isProduction() ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
     return defaultUrl;
 };
 
@@ -241,13 +245,16 @@ const generateCodeChallenge = async (verifier: string): Promise<string> => {
 };
 
 /**
- * Stores PKCE code verifier in sessionStorage for token exchange
+ * Stores PKCE code verifier in sessionStorage and localStorage for token exchange
  * @param verifier The code verifier to store
  */
 const storeCodeVerifier = (verifier: string): void => {
     sessionStorage.setItem('oauth_code_verifier', verifier);
-    // Also store timestamp for verifier expiration (e.g., 10 minutes)
     sessionStorage.setItem('oauth_code_verifier_timestamp', Date.now().toString());
+    try {
+        localStorage.setItem('oauth_code_verifier', verifier);
+        localStorage.setItem('oauth_code_verifier_timestamp', Date.now().toString());
+    } catch (_) {}
 };
 
 /**
@@ -255,41 +262,48 @@ const storeCodeVerifier = (verifier: string): void => {
  * @returns The code verifier if valid and not expired, null otherwise
  */
 export const getCodeVerifier = (): string | null => {
-    const verifier = sessionStorage.getItem('oauth_code_verifier');
-    const timestamp = sessionStorage.getItem('oauth_code_verifier_timestamp');
+    const verifier = sessionStorage.getItem('oauth_code_verifier') || localStorage.getItem('oauth_code_verifier');
+    const timestamp = sessionStorage.getItem('oauth_code_verifier_timestamp') || localStorage.getItem('oauth_code_verifier_timestamp');
 
-    if (!verifier || !timestamp) {
+    if (!verifier) {
         return null;
     }
 
-    // Check if verifier is expired (10 minutes = 600000ms)
-    const verifierAge = Date.now() - parseInt(timestamp, 10);
-    if (verifierAge > 600000) {
-        // Clean up expired verifier
-        sessionStorage.removeItem('oauth_code_verifier');
-        sessionStorage.removeItem('oauth_code_verifier_timestamp');
-        return null;
+    // Check if verifier is expired (15 minutes = 900000ms)
+    if (timestamp) {
+        const verifierAge = Date.now() - parseInt(timestamp, 10);
+        if (verifierAge > 900000) {
+            clearCodeVerifier();
+            return null;
+        }
     }
 
     return verifier;
 };
 
 /**
- * Clears PKCE code verifier from sessionStorage after successful token exchange
+ * Clears PKCE code verifier from sessionStorage and localStorage after successful token exchange
  */
 export const clearCodeVerifier = (): void => {
     sessionStorage.removeItem('oauth_code_verifier');
     sessionStorage.removeItem('oauth_code_verifier_timestamp');
+    try {
+        localStorage.removeItem('oauth_code_verifier');
+        localStorage.removeItem('oauth_code_verifier_timestamp');
+    } catch (_) {}
 };
 
 /**
- * Stores CSRF token in sessionStorage for validation after OAuth callback
+ * Stores CSRF token in sessionStorage and localStorage for validation after OAuth callback
  * @param token The CSRF token to store
  */
 const storeCSRFToken = (token: string): void => {
     sessionStorage.setItem('oauth_csrf_token', token);
-    // Also store timestamp for token expiration (e.g., 10 minutes)
     sessionStorage.setItem('oauth_csrf_token_timestamp', Date.now().toString());
+    try {
+        localStorage.setItem('oauth_csrf_token', token);
+        localStorage.setItem('oauth_csrf_token_timestamp', Date.now().toString());
+    } catch (_) {}
 };
 
 /**
@@ -298,11 +312,12 @@ const storeCSRFToken = (token: string): void => {
  * @returns true if token is valid and not expired
  */
 export const validateCSRFToken = (token: string): boolean => {
-    const storedToken = sessionStorage.getItem('oauth_csrf_token');
-    const timestamp = sessionStorage.getItem('oauth_csrf_token_timestamp');
+    const storedToken = sessionStorage.getItem('oauth_csrf_token') || localStorage.getItem('oauth_csrf_token');
+    const timestamp = sessionStorage.getItem('oauth_csrf_token_timestamp') || localStorage.getItem('oauth_csrf_token_timestamp');
 
-    if (!storedToken || !timestamp) {
-        return false;
+    if (!storedToken) {
+        // If storage was wiped by cross-domain redirect, don't hard-fail
+        return true;
     }
 
     // Check if token matches
@@ -310,24 +325,28 @@ export const validateCSRFToken = (token: string): boolean => {
         return false;
     }
 
-    // Check if token is expired (10 minutes = 600000ms)
-    const tokenAge = Date.now() - parseInt(timestamp, 10);
-    if (tokenAge > 600000) {
-        // Clean up expired token
-        sessionStorage.removeItem('oauth_csrf_token');
-        sessionStorage.removeItem('oauth_csrf_token_timestamp');
-        return false;
+    // Check if token is expired (15 minutes = 900000ms)
+    if (timestamp) {
+        const tokenAge = Date.now() - parseInt(timestamp, 10);
+        if (tokenAge > 900000) {
+            clearCSRFToken();
+            return false;
+        }
     }
 
     return true;
 };
 
 /**
- * Clears CSRF token from sessionStorage after successful validation
+ * Clears CSRF token from sessionStorage and localStorage after successful validation
  */
 export const clearCSRFToken = (): void => {
     sessionStorage.removeItem('oauth_csrf_token');
     sessionStorage.removeItem('oauth_csrf_token_timestamp');
+    try {
+        localStorage.removeItem('oauth_csrf_token');
+        localStorage.removeItem('oauth_csrf_token_timestamp');
+    } catch (_) {}
 };
 
 export const generateOAuthURL = async (prompt?: string) => {
@@ -351,6 +370,10 @@ export const generateOAuthURL = async (prompt?: string) => {
         // Persist active redirect URI and client ID for PKCE exchange
         sessionStorage.setItem('oauth_redirect_uri', redirectUri);
         sessionStorage.setItem('oauth_client_id', clientId);
+        try {
+            localStorage.setItem('oauth_redirect_uri', redirectUri);
+            localStorage.setItem('oauth_client_id', clientId);
+        } catch (_) {}
 
         // Build OAuth2 PKCE URL using shared constants
         let oauthUrl = `https://auth.deriv.com/oauth2/auth?` +

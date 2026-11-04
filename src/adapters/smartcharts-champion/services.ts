@@ -4,6 +4,7 @@
  */
 
 import ApiHelpers from '@/external/bot-skeleton/services/api/api-helpers';
+import chart_api from '@/external/bot-skeleton/services/api/chart-api';
 import type { TServices } from './types';
 
 // Logger utility for services layer
@@ -151,31 +152,35 @@ export function createServices(): TServices {
             try {
                 const apiHelpers = ApiHelpers.instance as any;
 
-                if (!isApiHelpersInitialized(apiHelpers)) {
-                    throw new Error('ApiHelpers not initialized or active_symbols not available');
+                if (isApiHelpersInitialized(apiHelpers)) {
+                    // Retrieve active symbols using the existing service
+                    const activeSymbols = await apiHelpers.active_symbols.retrieveActiveSymbols();
+                    if (Array.isArray(activeSymbols) && activeSymbols.length > 0) {
+                        return activeSymbols;
+                    }
                 }
 
-                // Retrieve active symbols using the existing service
-                const activeSymbols = await apiHelpers.active_symbols.retrieveActiveSymbols();
-
-                // Convert the processed symbols back to array format for the adapter
-                if (!Array.isArray(activeSymbols)) {
-                    logger.warn('No active symbols available from ApiHelpers');
-                    return [];
+                // Fallback: fetch directly via chart_api WebSocket
+                if (chart_api?.api) {
+                    const res = await chart_api.api.send({ active_symbols: 'brief', product_type: 'basic' });
+                    if (res?.active_symbols && Array.isArray(res.active_symbols)) {
+                        return res.active_symbols;
+                    }
                 }
 
-                return activeSymbols;
+                return [];
             } catch (error) {
                 logger.error('Error getting active symbols:', error);
 
-                // Fallback: try to get from the raw active_symbols array if available
-                try {
-                    const apiHelpers = ApiHelpers.instance as any;
-                    if (isApiHelpersInitialized(apiHelpers) && apiHelpers.active_symbols.active_symbols) {
-                        return apiHelpers.active_symbols.active_symbols;
+                if (chart_api?.api) {
+                    try {
+                        const res = await chart_api.api.send({ active_symbols: 'brief', product_type: 'basic' });
+                        if (res?.active_symbols && Array.isArray(res.active_symbols)) {
+                            return res.active_symbols;
+                        }
+                    } catch (fallbackError) {
+                        logger.error('Fallback active symbols retrieval failed:', fallbackError);
                     }
-                } catch (fallbackError) {
-                    logger.error('Fallback active symbols retrieval failed:', fallbackError);
                 }
 
                 return [];
@@ -190,42 +195,27 @@ export function createServices(): TServices {
             try {
                 const apiHelpers = ApiHelpers.instance as any;
 
-                if (!apiHelpers) {
-                    logger.error('ApiHelpers instance not available');
-                    return {};
-                }
-
-                if (!apiHelpers.trading_times) {
-                    logger.error('trading_times not available on ApiHelpers instance');
-                    return {};
-                }
-                // Initialize trading times if not already done
-                await apiHelpers.trading_times.initialise();
-
-                // Get the trading times data - this is the actual data structure from TradingTimes class
-                const tradingTimesData = apiHelpers.trading_times.trading_times;
-
-                if (!tradingTimesData || typeof tradingTimesData !== 'object') {
-                    logger.warn('No trading times data available, trying fallback...');
-
-                    // Try to trigger setTradingTimes fallback manually
-                    if (typeof apiHelpers.trading_times.setTradingTimes === 'function') {
-                        apiHelpers.trading_times.setTradingTimes();
-                        const fallbackData = apiHelpers.trading_times.trading_times;
-
-                        if (fallbackData && typeof fallbackData === 'object') {
-                            // Use the fallback data
-                            return transformTradingTimesData(fallbackData);
-                        }
+                if (apiHelpers && apiHelpers.trading_times) {
+                    // Initialize trading times if not already done
+                    await apiHelpers.trading_times.initialise();
+                    const tradingTimesData = apiHelpers.trading_times.trading_times;
+                    if (tradingTimesData && typeof tradingTimesData === 'object') {
+                        return transformTradingTimesData(tradingTimesData);
                     }
-
-                    return {};
                 }
 
-                return transformTradingTimesData(tradingTimesData);
+                // Fallback: fetch directly via chart_api WebSocket
+                if (chart_api?.api) {
+                    const today = new Date().toISOString().slice(0, 10);
+                    const res = await chart_api.api.send({ trading_times: today });
+                    if (res?.trading_times) {
+                        return transformTradingTimesData(res.trading_times);
+                    }
+                }
+
+                return {};
             } catch (error) {
                 logger.error('Error getting trading times:', error);
-                logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace available');
                 return {};
             }
         },

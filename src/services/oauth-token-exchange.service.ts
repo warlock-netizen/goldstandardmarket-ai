@@ -133,8 +133,8 @@ export class OAuthTokenExchangeService {
             // - client_id: your OAuth2 client ID
             // - code_verifier: the PKCE code verifier (proves we initiated the auth flow)
 
-            const clientId = sessionStorage.getItem('oauth_client_id') || getOAuthClientId();
-            const redirectUri = sessionStorage.getItem('oauth_redirect_uri') || getOAuthRedirectURI();
+            const clientId = sessionStorage.getItem('oauth_client_id') || localStorage.getItem('oauth_client_id') || getOAuthClientId();
+            const redirectUri = sessionStorage.getItem('oauth_redirect_uri') || localStorage.getItem('oauth_redirect_uri') || getOAuthRedirectURI();
 
             if (!clientId) {
                 ErrorLogger.error('OAuth', 'CLIENT_ID is not configured');
@@ -202,8 +202,8 @@ export class OAuthTokenExchangeService {
                 };
             }
 
+            let derivAccountId = (data.acct1 as string) || '';
             const derivToken = (data.token1 as string) || '';
-            const derivAccountId = (data.acct1 as string) || '';
             const accessToken = (data.access_token as string) || '';
 
             if (derivToken || accessToken) {
@@ -211,8 +211,24 @@ export class OAuthTokenExchangeService {
                 clearCodeVerifier();
                 sessionStorage.removeItem('oauth_redirect_uri');
                 sessionStorage.removeItem('oauth_client_id');
+                try {
+                    localStorage.removeItem('oauth_redirect_uri');
+                    localStorage.removeItem('oauth_client_id');
+                } catch (_) {}
 
-                // Store authentication info in sessionStorage
+                if (!derivAccountId && accessToken) {
+                    try {
+                        const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
+                        const accounts = await DerivWSAccountsService.fetchAccountsList(accessToken);
+                        if (accounts && accounts.length > 0) {
+                            derivAccountId = accounts[0].account_id;
+                        }
+                    } catch (accErr) {
+                        console.warn('[OAuth] Could not fetch initial accounts list from DerivWS:', accErr);
+                    }
+                }
+
+                // Store authentication info in sessionStorage and localStorage
                 const authInfo = {
                     access_token: accessToken,
                     deriv_token: derivToken,
@@ -225,7 +241,11 @@ export class OAuthTokenExchangeService {
                 };
 
                 // Store as JSON string
-                sessionStorage.setItem('auth_info', JSON.stringify(authInfo));
+                const authInfoStr = JSON.stringify(authInfo);
+                sessionStorage.setItem('auth_info', authInfoStr);
+                try {
+                    localStorage.setItem('auth_info', authInfoStr);
+                } catch (_) {}
 
                 // Store in localStorage for bot-skeleton compatibility
                 const botToken = derivToken || accessToken;

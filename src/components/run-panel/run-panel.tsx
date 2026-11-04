@@ -256,6 +256,7 @@ const RunPanel = observer(() => {
         is_drawer_open,
         is_statistics_info_modal_open,
         is_clear_stat_disabled,
+        is_running,
         onClearStatClick,
         onMount,
         onRunButtonClick, // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -310,7 +311,7 @@ const RunPanel = observer(() => {
         />
     );
 
-    const show_run_panel = [BOT_BUILDER, CHART].includes(active_tab) || active_tour;
+    const show_run_panel = [BOT_BUILDER, CHART].includes(active_tab) || active_tour || is_running;
     if ((!show_run_panel && isDesktop) || active_tour === 'bot_builder') return null;
 
     return (

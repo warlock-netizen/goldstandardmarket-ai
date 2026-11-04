@@ -522,12 +522,13 @@ const AppWrapper = observer(() => {
                 {!is_pegasus_active && (
                     <div className='main__run-strategy-wrapper'>
                         <RunStrategy />
+                        <RunPanel />
                     </div>
                 )}
                 <ChartModal />
                 <TradingViewModal />
             </DesktopWrapper>
-            {!is_pegasus_active && (isDesktop || !is_open) && <RunPanel />}
+            <MobileWrapper>{!is_pegasus_active && !is_open && <RunPanel />}</MobileWrapper>
 
             <Dialog
                 cancel_button_text={cancel_button_text || localize('Cancel')}

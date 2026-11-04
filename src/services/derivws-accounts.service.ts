@@ -1,4 +1,4 @@
-import { isProduction } from '@/components/shared';
+import { getOAuthClientId, isProduction } from '@/components/shared';
 import brandConfig from '../../brand.config.json';
 
 /**
@@ -69,20 +69,24 @@ export class DerivWSAccountsService {
     }
 
     /**
-     * Stores accounts list in sessionStorage
+     * Stores accounts list in sessionStorage and localStorage
      * @param accounts Array of DerivAccount objects
      */
     static storeAccounts(accounts: DerivAccount[]): void {
-        sessionStorage.setItem('deriv_accounts', JSON.stringify(accounts));
+        const str = JSON.stringify(accounts);
+        sessionStorage.setItem('deriv_accounts', str);
+        try {
+            localStorage.setItem('deriv_accounts', str);
+        } catch (_) {}
     }
 
     /**
-     * Retrieves accounts list from sessionStorage
+     * Retrieves accounts list from sessionStorage or localStorage
      * @returns Array of DerivAccount objects or null if not found
      */
     static getStoredAccounts(): DerivAccount[] | null {
         try {
-            const accountsStr = sessionStorage.getItem('deriv_accounts');
+            const accountsStr = sessionStorage.getItem('deriv_accounts') || localStorage.getItem('deriv_accounts');
             if (!accountsStr) {
                 return null;
             }
@@ -106,10 +110,13 @@ export class DerivWSAccountsService {
     }
 
     /**
-     * Clears stored accounts from sessionStorage
+     * Clears stored accounts from sessionStorage and localStorage
      */
     static clearStoredAccounts(): void {
         sessionStorage.removeItem('deriv_accounts');
+        try {
+            localStorage.removeItem('deriv_accounts');
+        } catch (_) {}
     }
 
     /**
@@ -128,12 +135,15 @@ export class DerivWSAccountsService {
         this.accountsFetchPromise = (async () => {
             try {
                 const baseURL = this.getDerivWSBaseURL();
-                const endpoint = `${baseURL}accounts`;
+                const optionsDir = brandConfig.platform.derivws.directories.options;
+                const endpoint = `${baseURL}${optionsDir}accounts`;
 
                 const response = await fetch(endpoint, {
                     method: 'GET',
                     headers: {
+                        Accept: 'application/json',
                         Authorization: `Bearer ${accessToken}`,
+                        'Deriv-App-ID': getOAuthClientId(),
                     },
                 });
 
@@ -197,7 +207,9 @@ export class DerivWSAccountsService {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
+                        Accept: 'application/json',
                         Authorization: `Bearer ${accessToken}`,
+                        'Deriv-App-ID': getOAuthClientId(),
                     },
                 });
 

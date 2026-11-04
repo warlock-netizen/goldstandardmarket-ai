@@ -237,15 +237,25 @@ async function handlePKCECallback(): Promise<boolean> {
         }
         window.history.replaceState({}, '', url.toString());
 
-        // Clear old API instance to force reconnection with new token
+        // Clear old API instance to force reconnection with new authenticated URL
         clearDerivApiInstance();
 
         const storedToken = localStorage.getItem('authToken');
         if (storedToken) {
-            import('@/external/bot-skeleton/services/api/api-base').then(({ api_base }) => {
-                api_base.authorizeWithToken(storedToken).catch(err => {
-                    console.error('[Auth] Authorization after PKCE failed:', err);
-                });
+            import('@/external/bot-skeleton/services/api/api-base').then(async ({ api_base }) => {
+                if (storedToken.startsWith('a1-') || (!storedToken.startsWith('ory_at_') && storedToken.length < 50)) {
+                    // Classic Deriv token or Personal Access Token
+                    api_base.authorizeWithToken(storedToken).catch(err => {
+                        console.error('[Auth] Authorization with token failed:', err);
+                    });
+                } else {
+                    // OAuth2 PKCE access token: reconnect WebSocket with dynamic OTP URL
+                    try {
+                        await api_base.init(true);
+                    } catch (err) {
+                        console.error('[Auth] WebSocket re-init with OAuth2 OTP failed:', err);
+                    }
+                }
             });
         }
 
