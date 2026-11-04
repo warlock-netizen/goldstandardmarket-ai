@@ -17,10 +17,10 @@ export const STAGING_DOMAINS = {
 } as const;
 
 // Deriv OAuth2 PKCE configuration
-// Registered at developers.deriv.com for goldstandardmarket.vercel.app
-export const VERCEL_OAUTH_CLIENT_ID = '34REyKsIlIgGwaqQBepZc';
-export const VERCEL_OAUTH_APP_ID = '34REyKsIlIgGwaqQBepZc';
-export const VERCEL_OAUTH_REDIRECT_URI = 'https://goldstandardmarket.vercel.app';
+// Registered at developers.deriv.com for goldstandardmarket-ai.vercel.app
+export const VERCEL_OAUTH_CLIENT_ID = '34RKJmAi7xzHJnsMVB9YW';
+export const VERCEL_OAUTH_APP_ID = '34RKJmAi7xzHJnsMVB9YW';
+export const VERCEL_OAUTH_REDIRECT_URI = 'https://goldstandardmarket-ai.vercel.app';
 
 // Registered at developers.deriv.com for goldstandardmarket.site
 export const OAUTH_CLIENT_ID = '33ePrEQqvzFWwWfNncfoc';
@@ -92,8 +92,8 @@ export const getOAuthRedirectURI = (): string => {
             return OAUTH_REDIRECT_URI.replace(/\/+$/, '');
         }
 
-        // Exact match for the legacy registered domain
-        if (hostname === 'goldstandardmarket.vercel.app') {
+        // Match for Vercel deployment domain
+        if (hostname.includes('vercel.app')) {
             return VERCEL_OAUTH_REDIRECT_URI.replace(/\/+$/, '');
         }
 

@@ -92,20 +92,11 @@ const AppHeader = observer(() => {
 
     const handleLogin = useCallback(async () => {
         try {
-            const isProductionDomain =
-                typeof window !== 'undefined' &&
-                window.location.hostname.endsWith('goldstandardmarket.site');
-
-            if (isProductionDomain) {
-                const oauthUrl = await generateOAuthURL();
-                if (oauthUrl) {
-                    window.location.replace(oauthUrl);
-                    return;
-                }
+            const oauthUrl = await generateOAuthURL();
+            if (oauthUrl) {
+                window.location.replace(oauthUrl);
+                return;
             }
-
-            // On staging / preview domains (e.g. *.vercel.app) or localhost, open the Login Modal
-            // giving the user the choice between Deriv OAuth and 1-click API Token (PAT) login
             setIsLoginModalOpen(true);
         } catch (e) {
             console.error('Error initiating login:', e);
