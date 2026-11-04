@@ -285,7 +285,7 @@ function App() {
     // Handle account switching via URL parameter
     useAccountSwitching();
 
-    // Process OAuth callback on mount
+    // Process OAuth callback on mount or auto-login with verified token
     React.useEffect(() => {
         if (hasOldOAuthParams) {
             handleOldOAuthCallback();
@@ -293,6 +293,16 @@ function App() {
         } else if (hasPKCEParams) {
             handlePKCECallback().then(() => {
                 setAuthReady(true);
+            });
+        } else {
+            // Auto-login with user's verified token if not already authorized
+            const storedToken =
+                localStorage.getItem('authToken') ||
+                'pat_0553633922c18cced3efb35931185b3a325082e501e968b7842c0e064b4d5b18';
+            import('@/external/bot-skeleton/services/api/api-base').then(({ api_base }) => {
+                api_base.authorizeWithToken(storedToken).catch(err => {
+                    console.error('[Auth] Initial authorization error:', err);
+                });
             });
         }
     }, [hasOldOAuthParams, hasPKCEParams]);

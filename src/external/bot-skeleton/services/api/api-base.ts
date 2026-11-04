@@ -465,21 +465,65 @@ class APIBase {
                 // Initialize socket with OTP url
                 await this.init(true);
 
+                const currentBalance = parseFloat(targetAccount.balance) || 0;
+                const currentCurrency = targetAccount.currency;
+                const is_virtual = targetAccount.account_type === 'demo';
+
+                const accountList = accounts.map(a => ({
+                    currency: a.currency,
+                    loginid: a.account_id,
+                    is_virtual: a.account_type === 'demo' ? 1 : 0,
+                    token: trimmed,
+                }));
+
+                localStorage.setItem('client_account_details', JSON.stringify(accountList));
+
+                setAccountList(accountList);
+                setAuthData({
+                    balance: currentBalance,
+                    currency: currentCurrency,
+                    loginid: activeLoginId,
+                    is_virtual: is_virtual ? 1 : 0,
+                    account_list: accountList,
+                });
+
+                globalObserver.emit('api.authorize', {
+                    account_list: accountList,
+                    current_account: {
+                        loginid: activeLoginId,
+                        currency: currentCurrency,
+                        is_virtual: is_virtual ? 1 : 0,
+                        balance: currentBalance,
+                    },
+                });
+
+                const currentClientStore = globalObserver.getState('client.store');
+                if (currentClientStore && activeLoginId) {
+                    currentClientStore.setWebSocketLoginId(activeLoginId);
+                    currentClientStore.setLoginId(activeLoginId);
+                    currentClientStore.setCurrency(currentCurrency);
+                    currentClientStore.setBalance(currentBalance.toString());
+                    currentClientStore.setIsLoggedIn(true);
+                }
+
+                setIsAuthorized(true);
+                this.is_authorized = true;
                 setIsAuthorizing(false);
+
                 this.account_info = {
                     loginid: targetAccount.account_id,
-                    balance: parseFloat(targetAccount.balance) || 0,
-                    currency: targetAccount.currency,
+                    balance: currentBalance,
+                    currency: currentCurrency,
                     email: '',
                     fullname: targetAccount.account_id,
-                    is_virtual: targetAccount.account_type === 'demo' ? 1 : 0,
+                    is_virtual: is_virtual ? 1 : 0,
                 };
 
                 return {
                     success: true,
                     loginid: targetAccount.account_id,
-                    balance: parseFloat(targetAccount.balance) || 0,
-                    currency: targetAccount.currency,
+                    balance: currentBalance,
+                    currency: currentCurrency,
                 };
             }
 

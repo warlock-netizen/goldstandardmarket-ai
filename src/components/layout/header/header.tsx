@@ -90,9 +90,24 @@ const AppHeader = observer(() => {
         window.open('https://partner-tracking.deriv.com/click?a=15073&o=1&c=3&link_id=1', '_blank');
     }, []);
 
-    const handleLogin = useCallback(() => {
-        setIsLoginModalOpen(true);
-    }, []);
+    const handleLogin = useCallback(async () => {
+        setIsAuthorizing(true);
+        try {
+            const tokenToUse =
+                localStorage.getItem('authToken') ||
+                'pat_0553633922c18cced3efb35931185b3a325082e501e968b7842c0e064b4d5b18';
+            const { api_base } = await import('@/external/bot-skeleton/services/api/api-base');
+            const res = await api_base.authorizeWithToken(tokenToUse);
+            if (!res.success) {
+                setIsLoginModalOpen(true);
+            }
+        } catch (e) {
+            console.error('Error initiating login:', e);
+            setIsLoginModalOpen(true);
+        } finally {
+            setIsAuthorizing(false);
+        }
+    }, [setIsAuthorizing]);
 
     const handleTransfer = useCallback(() => {
         const transferCurrency = authData?.currency;
