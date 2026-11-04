@@ -39,17 +39,23 @@ const SOCIAL_LINKS = [
 ];
 
 export const DashboardV2 = observer(({ handleTabChange }: TDashboardV2Props) => {
-    const { client, load_modal } = useStore();
+    const { client, load_modal, quick_strategy } = useStore();
     const is_logged_in = client?.is_logged_in;
 
     const handleCardClick = (cardId: string, tab: number) => {
         if (cardId === 'my_computer') {
             handleTabChange(DBOT_TABS.BOT_BUILDER);
+            load_modal?.setActiveTabIndex(0);
             load_modal?.toggleLoadModal();
         } else if (cardId === 'google_drive') {
             handleTabChange(DBOT_TABS.BOT_BUILDER);
             load_modal?.setActiveTabIndex(1);
             load_modal?.toggleLoadModal();
+        } else if (cardId === 'quick_strategy') {
+            handleTabChange(DBOT_TABS.BOT_BUILDER);
+            quick_strategy?.setFormVisibility(true);
+        } else if (cardId === 'speed_bot') {
+            handleTabChange(DBOT_TABS.FREE_BOT);
         } else {
             handleTabChange(tab);
         }
