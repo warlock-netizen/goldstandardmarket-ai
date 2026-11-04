@@ -36,6 +36,22 @@ const BotBuilder = observer(() => {
     }, [onMount, onUnmount]);
 
     React.useEffect(() => {
+        if (active_tab === 1) {
+            if (!window.Blockly?.derivWorkspace) {
+                onMount();
+            } else {
+                setTimeout(() => {
+                    try {
+                        window.Blockly?.svgResize(window.Blockly?.derivWorkspace);
+                    } catch (e) {
+                        console.warn('Blockly svgResize failed:', e);
+                    }
+                }, 100);
+            }
+        }
+    }, [active_tab, onMount]);
+
+    React.useEffect(() => {
         const workspace = window.Blockly?.derivWorkspace;
         if (workspace && is_running && !is_blockly_listener_registered.current) {
             is_blockly_listener_registered.current = true;

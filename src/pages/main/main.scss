@@ -415,11 +415,17 @@
 
     &--active {
         z-index: 2;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
         display: block !important;
     }
 
     &--inactive {
-        display: none !important;
+        z-index: -1 !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     @include mobile-or-tablet-screen {

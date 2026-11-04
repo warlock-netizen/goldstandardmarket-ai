@@ -122,9 +122,9 @@ class DBot {
                     if (is_mobile) {
                         workspaceScale = 0.6;
                     } else {
-                        const scratch_div_width = document.getElementById('scratch_div')?.offsetWidth;
+                        const scratch_div_width = document.getElementById('scratch_div')?.offsetWidth || (window_width - 32);
                         const zoom_scale = scratch_div_width / window_width / 1.5;
-                        workspaceScale = zoom_scale;
+                        workspaceScale = (zoom_scale && zoom_scale > 0.2) ? zoom_scale : 0.7;
                     }
                 }
                 const el_scratch_div = document.getElementById('scratch_div');
@@ -132,6 +132,7 @@ class DBot {
                     return;
                 }
 
+                workspaceScale = Math.max(Number(workspaceScale) || 0.7, 0.4);
                 this.workspace = window.Blockly.inject(el_scratch_div, {
                     media: 'assets/media/',
                     renderer: 'zelos',

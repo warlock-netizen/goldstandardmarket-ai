@@ -3,16 +3,19 @@ import './launch-gateway.scss';
 
 export const LaunchGateway: React.FC = () => {
     const [isVisible, setIsVisible] = useState(() => {
-        // Show once per session or on direct reload if needed
         return !sessionStorage.getItem('gsm_launch_gateway_shown');
     });
 
+    const dismiss = () => {
+        setIsVisible(false);
+        try {
+            sessionStorage.setItem('gsm_launch_gateway_shown', 'true');
+        } catch (e) {}
+    };
+
     useEffect(() => {
         if (isVisible) {
-            const timer = window.setTimeout(() => {
-                setIsVisible(false);
-                sessionStorage.setItem('gsm_launch_gateway_shown', 'true');
-            }, 4600);
+            const timer = window.setTimeout(dismiss, 3800);
             return () => window.clearTimeout(timer);
         }
     }, [isVisible]);
@@ -25,7 +28,32 @@ export const LaunchGateway: React.FC = () => {
             aria-label="Gold Standard Market and Pegasus AI are launching"
             aria-live="polite"
             role="status"
+            onClick={dismiss}
         >
+            <button
+                type="button"
+                className="launch-gateway__skip-btn"
+                onClick={e => {
+                    e.stopPropagation();
+                    dismiss();
+                }}
+                style={{
+                    position: 'absolute',
+                    top: 'max(1.6rem, env(safe-area-inset-top))',
+                    right: 'max(1.6rem, env(safe-area-inset-right))',
+                    background: 'rgba(255, 255, 255, 0.12)',
+                    border: '1px solid rgba(250, 204, 21, 0.5)',
+                    color: '#facc15',
+                    padding: '0.6rem 1.4rem',
+                    borderRadius: '999px',
+                    fontSize: '1.2rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    zIndex: 2147483001,
+                }}
+            >
+                Skip ?
+            </button>
             <div className="launch-gateway__grid" aria-hidden="true" />
             <div className="launch-gateway__glow launch-gateway__glow--top" aria-hidden="true" />
             <div className="launch-gateway__glow launch-gateway__glow--bottom" aria-hidden="true" />
