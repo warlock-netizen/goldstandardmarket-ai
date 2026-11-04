@@ -35,6 +35,7 @@ import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import DashboardV2 from '../dashboard/dashboard-v2';
+import BotBuilder from '../bot-builder';
 import FreeBots from '../free-bots';
 import PegasusAi from '../pegasus-ai';
 import { PegasusActivatedModal } from '../pegasus-ai/pegasus-activated-modal';
@@ -47,7 +48,6 @@ import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
-const AdminDashboard = lazy(() => import('../admin'));
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -80,7 +80,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'free_bot', 'chart', 'tutorial', 'pegasus_ai', 'admin'];
+    const hash = ['dashboard', 'bot_builder', 'free_bot', 'chart', 'tutorial', 'pegasus_ai'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -436,7 +436,11 @@ const AppWrapper = observer(() => {
                                     </>
                                 }
                                 id='id-bot-builder'
-                            />
+                            >
+                                <Suspense fallback={<ChunkLoader message={localize('Loading Bot Builder...')} />}>
+                                    <BotBuilder />
+                                </Suspense>
+                            </div>
 
                             <div
                                 label={
@@ -496,20 +500,6 @@ const AppWrapper = observer(() => {
                             >
                                 <Suspense fallback={<ChunkLoader message={localize('Loading PEGASUS AI...')} />}>
                                     <PegasusAi handleTabChange={handleTabChange} />
-                                </Suspense>
-                            </div>
-
-                            <div
-                                label={
-                                    <>
-                                        <span aria-hidden='true' style={{ fontSize: '18px' }}>⚙</span>
-                                        <Localize i18n_default_text='Admin' />
-                                    </>
-                                }
-                                id='id-admin'
-                            >
-                                <Suspense fallback={<ChunkLoader message={localize('Loading Admin...')} />}>
-                                    <AdminDashboard />
                                 </Suspense>
                             </div>
                         </Tabs>

@@ -394,3 +394,34 @@
     }
 }
 
+.header-theme-toggle {
+    background: none;
+    border: 1px solid var(--general-section-2, rgba(148, 163, 184, 0.3));
+    border-radius: 50%;
+    width: 3.2rem;
+    height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.6rem;
+    line-height: 1;
+    margin-inline-end: 0.8rem;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    flex-shrink: 0;
+
+    &:hover {
+        background: var(--general-hover, rgba(0, 0, 0, 0.06));
+        border-color: var(--general-section-3, rgba(148, 163, 184, 0.5));
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--brand-red-coral, #ff444f);
+        outline-offset: 2px;
+    }
+}
+
+.header-exit-btn {
+    margin-inline-start: 0.4rem;
+}
+

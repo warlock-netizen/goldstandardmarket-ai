@@ -6,6 +6,7 @@ import Button from '@/components/shared_ui/button';
 import useActiveAccount from '@/hooks/api/account/useActiveAccount';
 import { useApiBase } from '@/hooks/useApiBase';
 import { useLogout } from '@/hooks/useLogout';
+import useThemeSwitcher from '@/hooks/useThemeSwitcher';
 import { useStore } from '@/hooks/useStore';
 import { navigateToTransfer } from '@/utils/transfer-utils';
 import { Localize } from '@deriv-com/translations';
@@ -39,6 +40,9 @@ const AppHeader = observer(() => {
     });
 
     const handleLogout = useLogout();
+
+    // Dark / Light mode toggle (uses existing useThemeSwitcher hook)
+    const { toggleTheme: handleThemeToggle, is_dark_mode_on: isDark } = useThemeSwitcher();
 
     // Clear OAuth-pending flag once the account is set (auth succeeded)
     // or after a generous timeout in case something goes wrong.
@@ -137,6 +141,22 @@ const AppHeader = observer(() => {
                             >
                                 <Localize i18n_default_text='Transfer' />
                             </Button>
+                            <button
+                                className='header-theme-toggle'
+                                onClick={handleThemeToggle}
+                                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                                aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                            >
+                                {isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+                            </button>
+                            <Button
+                                tertiary
+                                className='header-exit-btn'
+                                disabled={client?.is_logging_out}
+                                onClick={handleLogout}
+                            >
+                                <Localize i18n_default_text='Exit' />
+                            </Button>
                         </div>
                     );
                 }
@@ -169,6 +189,14 @@ const AppHeader = observer(() => {
                 // Show login and signup buttons when user is not authenticated
                 return (
                     <div className='auth-actions'>
+                        <button
+                            className='header-theme-toggle'
+                            onClick={handleThemeToggle}
+                            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                        >
+                            {isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+                        </button>
                         <Button tertiary onClick={handleLogin}>
                             <Localize i18n_default_text='Log in' />
                         </Button>
@@ -194,6 +222,7 @@ const AppHeader = observer(() => {
             handleLogin,
             handleSignup,
             handleTransfer,
+            handleThemeToggle,
         ]
     );
 
