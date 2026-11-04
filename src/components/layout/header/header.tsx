@@ -14,6 +14,7 @@ import { AppLogo } from '../app-logo';
 import AccountSwitcher from './account-switcher';
 import MenuItems from './menu-items';
 import MobileMenu from './mobile-menu';
+import MarketTicker from './market-ticker';
 import LoginModal from './login-modal';
 import './header.scss';
 
@@ -86,11 +87,20 @@ const AppHeader = observer(() => {
     }, [isAuthorizing, activeLoginid, setIsAuthorizing, authTimeout, isOAuthPending]);
 
     const handleSignup = useCallback(() => {
-        window.open('https://deriv.com/signup/', '_blank');
+        window.open('https://partner-tracking.deriv.com/click?a=15073&o=1&c=3&link_id=1', '_blank');
     }, []);
 
-    const handleLogin = useCallback(() => {
-        setIsLoginModalOpen(true);
+    const handleLogin = useCallback(async () => {
+        try {
+            const oauthUrl = await generateOAuthURL();
+            if (oauthUrl) {
+                window.location.replace(oauthUrl);
+            } else {
+                console.error('Failed to generate OAuth URL');
+            }
+        } catch (e) {
+            console.error('Error initiating login:', e);
+        }
     }, []);
 
     const handleTransfer = useCallback(() => {
@@ -196,15 +206,18 @@ const AppHeader = observer(() => {
     return (
         <>
             <Header
-                className={clsx('app-header', {
+                className={clsx('deriv-header app-header', {
                     'app-header--desktop': isDesktop,
                     'app-header--mobile': !isDesktop,
                 })}
             >
                 <Wrapper variant='left'>
-                    <MobileMenu onLogout={handleLogout} onLogin={() => setIsLoginModalOpen(true)} />
-                    <AppLogo />
-                    {isDesktop ? <MenuItems /> : renderAccountSection('left')}
+                    {!isDesktop && <MobileMenu onLogout={handleLogout} onLogin={handleLogin} />}
+                    <div className='app-header__brand-cluster'>
+                        <AppLogo />
+                        {isDesktop && <MarketTicker />}
+                    </div>
+                    {!isDesktop && renderAccountSection('left')}
                 </Wrapper>
                 <Wrapper variant='right'>{renderAccountSection('right')}</Wrapper>
             </Header>
