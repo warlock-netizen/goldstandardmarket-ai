@@ -43,6 +43,10 @@ export const DashboardV2 = observer(({ handleTabChange }: TDashboardV2Props) => 
     const is_logged_in = client?.is_logged_in;
 
     const handleCardClick = (cardId: string, tab: number) => {
+        if (cardId === 'pegasus_ai') {
+            handleTabChange(DBOT_TABS.PEGASUS_AI);
+            return;
+        }
         if (cardId === 'my_computer') {
             handleTabChange(DBOT_TABS.BOT_BUILDER);
             load_modal?.setActiveTabIndex(0);
@@ -62,6 +66,26 @@ export const DashboardV2 = observer(({ handleTabChange }: TDashboardV2Props) => 
     };
 
     const cards = [
+        {
+            id: 'pegasus_ai',
+            label: 'Pegasus AI',
+            desc: 'GSM Live Scanner & Auto Bot',
+            tab: DBOT_TABS.PEGASUS_AI,
+            color: '#eab308',
+            badge: 'AI LIVE',
+            Icon: () => (
+                <svg width='44' height='44' viewBox='0 0 44 44' fill='none' aria-hidden='true'>
+                    <circle cx='22' cy='22' r='18' stroke='#eab308' strokeWidth='1.8' fill='rgba(234, 179, 8, 0.12)' />
+                    <path
+                        d='M22 9 L25.5 16.5 L34 17.5 L28 23.5 L29.5 32 L22 28 L14.5 32 L16 23.5 L10 17.5 L18.5 16.5 Z'
+                        fill='#eab308'
+                    />
+                    <circle cx='22' cy='22' r='3.5' fill='#0f172a' />
+                    <circle cx='22' cy='22' r='1.8' fill='#fde047' />
+                </svg>
+            ),
+        },
+
         {
             id: 'my_computer',
             label: 'My computer',
@@ -216,7 +240,12 @@ export const DashboardV2 = observer(({ handleTabChange }: TDashboardV2Props) => 
                                 <card.Icon />
                             </div>
                             <div className='dashboard-v2__card-content'>
-                                <h2 className='dashboard-v2__card-title'>{card.label}</h2>
+                                <div className='dashboard-v2__card-title-row'>
+                                    <h2 className='dashboard-v2__card-title'>{card.label}</h2>
+                                    {'badge' in card && Boolean((card as any).badge) && (
+                                        <span className='dashboard-v2__card-badge'>{(card as any).badge}</span>
+                                    )}
+                                </div>
                                 <p className='dashboard-v2__card-desc'>{card.desc}</p>
                             </div>
                             <button type='button' className='dashboard-v2__card-action'>

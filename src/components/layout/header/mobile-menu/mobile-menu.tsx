@@ -33,22 +33,41 @@ const MobileMenu = ({ onLogout, onLogin }: TMobileMenuProps) => {
     const { currentLang = 'EN', localize, switchLanguage } = useTranslations();
     const { hideModal, isModalOpenFor, showModal } = useModalManager();
     const { isDesktop } = useDevice();
-    // [AI] Get client from store to check menu items
-    const { client } = useStore() ?? {};
+    // [AI] Get client and dashboard from store
+    const { client, dashboard } = useStore() ?? {};
+    const active_tab = dashboard?.active_tab ?? 0;
     // [/AI]
 
     // Get mobile menu configuration from brand.config.json
     const enableLanguageSettings = brandConfig.platform.footer?.enable_language_settings ?? true;
     const enableThemeToggle = brandConfig.platform.footer?.enable_theme_toggle ?? true;
 
-    // Check if menu has any items to determine if mobile menu should be shown
-    const { hasMenuItems } = useMobileMenuConfig(client, onLogout, enableThemeToggle, onLogin);
-
     const openDrawer = () => setIsDrawerOpen(true);
     const closeDrawer = () => {
         setIsDrawerOpen(false);
         setActiveSubmenu(null);
     };
+
+    const handleNavigateTab = (tabIndex: number) => {
+        closeDrawer();
+        if (dashboard) {
+            dashboard.setActiveTab(tabIndex);
+            const hash = ['dashboard', 'bot_builder', 'free_bot', 'chart', 'tutorial', 'pegasus_ai'];
+            if (hash[tabIndex]) {
+                window.location.hash = hash[tabIndex];
+            }
+        }
+    };
+
+    // Check if menu has any items to determine if mobile menu should be shown
+    const { hasMenuItems } = useMobileMenuConfig(
+        client,
+        onLogout,
+        enableThemeToggle,
+        onLogin,
+        handleNavigateTab,
+        active_tab
+    );
 
     const openSubmenu = (submenu: string) => setActiveSubmenu(submenu);
     const closeSubmenu = () => setActiveSubmenu(null);
@@ -123,6 +142,8 @@ const MobileMenu = ({ onLogout, onLogin }: TMobileMenuProps) => {
                                 closeDrawer();
                                 onLogin?.();
                             }}
+                            onNavigateTab={handleNavigateTab}
+                            activeTab={active_tab}
                         />
                     )}
                     {/* [/AI] */}

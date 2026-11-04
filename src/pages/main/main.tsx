@@ -35,7 +35,6 @@ import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import DashboardV2 from '../dashboard/dashboard-v2';
-import BotBuilder from '../bot-builder';
 import FreeBots from '../free-bots';
 import PegasusAi from '../pegasus-ai';
 import { PegasusActivatedModal } from '../pegasus-ai/pegasus-activated-modal';
@@ -436,11 +435,7 @@ const AppWrapper = observer(() => {
                                     </>
                                 }
                                 id='id-bot-builder'
-                            >
-                                <Suspense fallback={<ChunkLoader message={localize('Loading Bot Builder...')} />}>
-                                    <BotBuilder />
-                                </Suspense>
-                            </div>
+                            />
 
                             <div
                                 label={
@@ -555,7 +550,7 @@ const AppWrapper = observer(() => {
             })()}
 
             {/* Pegasus AI Live HUD & Modals */}
-            <AiLiveHud onClick={() => handleTabChange(DBOT_TABS.BOT_BUILDER)} />
+            <AiLiveHud onClick={() => handleTabChange(DBOT_TABS.PEGASUS_AI)} />
             <PegasusActivatedModal
                 isOpen={is_pegasus_activated_open}
                 onClose={() => setIsPegasusActivatedOpen(false)}
