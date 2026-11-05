@@ -40,17 +40,19 @@ const Drawer = ({
         }
     };
 
+    const is_right = anchor === 'right';
+
     return (
         <div
             data-testid='drawer'
             className={classNames('dc-drawer', className, {
-                [`dc-drawer--${anchor}`]: isDesktop,
+                [`dc-drawer--${anchor}`]: isDesktop || is_right,
                 'dc-drawer--open': is_open,
             })}
             style={{
                 zIndex,
                 transform:
-                    is_open && isDesktop
+                    is_open && (isDesktop || is_right)
                         ? anchor === 'left'
                             ? `translateX(calc(${width}px - 16px))`
                             : `translateX(calc(-${width}px + 16px))`
@@ -63,17 +65,17 @@ const Drawer = ({
                 })}
                 onClick={toggleDrawer}
             >
-                {isDesktop ? (
+                {isDesktop || is_right ? (
                     <LabelPairedChevronsRightCaptionRegularIcon
                         className={classNames('dc-drawer__toggle-icon', {
-                            [`dc-drawer__toggle-icon--${anchor}`]: isDesktop,
+                            [`dc-drawer__toggle-icon--${anchor}`]: isDesktop || is_right,
                         })}
                     />
                 ) : (
                     <LegacyHandleLessIcon iconSize='sm' className='dc-drawer__toggle-icon' />
                 )}
             </div>
-            <div className={classNames('dc-drawer__container', { [`dc-drawer__container--${anchor}`]: isDesktop })}>
+            <div className={classNames('dc-drawer__container', { [`dc-drawer__container--${anchor}`]: isDesktop || is_right })}>
                 {header && <div className='dc-drawer__header'>{header}</div>}
                 <div className={classNames('dc-drawer__content', contentClassName)}>{children}</div>
                 {footer && <div className='dc-drawer__footer'>{footer}</div>}

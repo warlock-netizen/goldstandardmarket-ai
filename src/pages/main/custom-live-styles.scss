@@ -56,6 +56,12 @@ body.theme--dark,
 .main__container {
     .dc-tabs--main__tabs {
         width: 100%;
+        height: 100%;
+        min-height: 0;
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
 
         > .dc-tabs__content > * {
             animation: gsm-page-enter var(--gsm-motion-page) var(--gsm-ease-out) both;
@@ -65,11 +71,13 @@ body.theme--dark,
     .dc-tabs__list--header--main__tabs {
         width: 100%;
         overflow-x: auto;
+        flex-shrink: 0;
     }
 
     .dc-tabs__list--main__tabs {
         width: 100%;
         display: flex;
+        flex-shrink: 0;
     }
 
     .dc-tabs__item--main__tabs {
@@ -84,12 +92,50 @@ body.theme--dark,
     .dc-tabs__content--main__tabs {
         background: var(--soft-bg);
         overscroll-behavior: contain;
-        justify-content: space-between;
+        justify-content: flex-start;
         min-width: 0;
         min-height: 0;
+        height: 100%;
+        max-height: 100%;
+        flex: 1 1 0;
         display: flex;
         flex-direction: column;
-        overflow: hidden auto;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(212, 175, 55, 0.45) transparent;
+
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.4);
+            border-radius: 9999px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+
+            &:hover {
+                background: rgba(212, 175, 55, 0.7);
+            }
+        }
+
+        body.theme--light & {
+            scrollbar-color: rgba(180, 83, 9, 0.45) transparent;
+
+            &::-webkit-scrollbar-thumb {
+                background: rgba(180, 83, 9, 0.4);
+
+                &:hover {
+                    background: rgba(180, 83, 9, 0.7);
+                }
+            }
+        }
 
         &:empty {
             background: transparent !important;
@@ -97,10 +143,11 @@ body.theme--dark,
         }
 
         > * {
-            flex: auto;
+            flex: 0 0 auto;
             min-width: 0;
             max-width: 100%;
             min-height: 0;
+            width: 100%;
         }
     }
 

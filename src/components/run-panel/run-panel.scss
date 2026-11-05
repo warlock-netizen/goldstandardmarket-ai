@@ -10,20 +10,11 @@
         height: var(--bot-content-height) !important;
         top: 10.4rem !important;
         width: 36.6rem !important;
-        right: 0;
 
-        &--mobile {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            z-index: var(--zindex-drawer);
-            height: calc(100% - env(safe-area-inset-bottom, 0));
-            padding-bottom: env(safe-area-inset-bottom, 0);
-
-            &-closed {
-                position: unset;
-            }
+        @include mobile-or-tablet-screen {
+            width: min(340px, 86vw) !important;
+            height: calc(100vh - 5.6rem) !important;
+            top: 5.6rem !important;
         }
 
         /* Fix for iOS devices to prevent run panel overlap */
