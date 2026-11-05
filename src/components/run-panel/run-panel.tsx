@@ -17,6 +17,7 @@ import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
+import RunPanelController from './run-panel-controller';
 
 type TStatisticsTile = {
     content: React.ElementType | string;
@@ -146,11 +147,7 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
 
     return (
         <>
-            {!isDesktop && (
-                <div style={{ padding: '0.8rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <TradeAnimation className='controls__animation' should_show_overlay />
-                </div>
-            )}
+            <RunPanelController />
             <Tabs active_index={active_index} onTabItemClick={setActiveTabIndex} top>
                 <div id='db-run-panel-tab__summary' label={<Localize i18n_default_text='Summary' />}>
                     <Summary is_drawer_open={is_drawer_open} />

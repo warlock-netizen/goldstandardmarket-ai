@@ -72,12 +72,22 @@ body.theme--dark,
         width: 100%;
         overflow-x: auto;
         flex-shrink: 0;
+
+        // Mobile: hide tab bar – hamburger menu handles all navigation
+        @media (max-width: 1279px) {
+            display: none !important;
+        }
     }
 
     .dc-tabs__list--main__tabs {
         width: 100%;
         display: flex;
         flex-shrink: 0;
+
+        // Mobile: hide tab bar too
+        @media (max-width: 1279px) {
+            display: none !important;
+        }
     }
 
     .dc-tabs__item--main__tabs {

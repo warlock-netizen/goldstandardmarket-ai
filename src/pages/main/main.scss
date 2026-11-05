@@ -16,6 +16,10 @@
     z-index: 1;
     pointer-events: none;
 
+    @include mobile-or-tablet-screen {
+        display: none !important;
+    }
+
     &--left {
         left: 0;
         background: linear-gradient(-88.07deg, transparent 1.63%, var(--general-section-1) 50.02%);
@@ -112,9 +116,8 @@
                     &--main {
                         &__tabs {
                             @include mobile-or-tablet-screen {
-                                width: 100%;
-                                overflow-x: auto;
-                                padding: 0.8rem 1.6rem 0;
+                                // Hide top tab bar on mobile – hamburger menu handles navigation
+                                display: none !important;
                             }
                         }
                     }
