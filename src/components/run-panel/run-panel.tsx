@@ -172,8 +172,12 @@ const DrawerFooter = ({ is_clear_stat_disabled, onClearStatClick }: TDrawerFoote
             has_effect
             secondary
         >
-            <span>
-                <Localize i18n_default_text='Reset' />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
+                    <path d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8' />
+                    <path d='M3 3v5h5' />
+                </svg>
+                <Localize i18n_default_text='Reset Telemetry' />
             </span>
         </Button>
     </div>
@@ -325,7 +329,7 @@ const RunPanel = observer(() => {
                     })}
                     contentClassName='run-panel__content'
                     header={header}
-                    footer={isDesktop && footer}
+                    footer={isDesktop && is_drawer_open ? footer : undefined}
                     is_open={is_drawer_open}
                     toggleDrawer={toggleDrawer}
                     width={366}

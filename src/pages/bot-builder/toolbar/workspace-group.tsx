@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
+import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import {
     LabelPairedArrowRotateLeftMdRegularIcon,
@@ -457,9 +458,9 @@ export const WorkspaceGroup = observer(() => {
                     <button
                         className='toolbar__bot-switcher-btn'
                         onClick={() => {
-                            window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 6 } }));
+                            dashboard.setActiveTab(DBOT_TABS.FREE_BOT);
                         }}
-                        title='Open Strategy Library'
+                        title='Open Strategy / Free Bots Library'
                     >
                         <span className='toolbar__bot-switcher-icon'>
                             <svg width='14' height='14' viewBox='0 0 24 24' fill='none'>

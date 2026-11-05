@@ -12,18 +12,65 @@
     }
 }
 
+// Root Block Headers (1. Trade parameters, 4. Restart trading conditions, etc.)
 .blocklyText.blocklyTextRootBlockHeader {
-    font-size: calc(var(--text-size-sm) * 0.9);
-    font-weight: normal;
-    font-stretch: normal;
-    font-style: normal;
-    line-height: 1.43;
-    letter-spacing: normal;
-    fill: $color-white;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    font-family: inherit;
+    line-height: 1.5;
+    letter-spacing: 0.03em;
+    fill: #ffffff !important;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
 }
 
+// Fully Visible, Modern Blockly Workspace Scrollbars
 .blocklyMainWorkspaceScrollbar {
-    display: none;
+    display: block !important;
+    opacity: 0.85;
+    transition: opacity 0.2s ease;
+    z-index: 100;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.blocklyScrollbarVertical,
+.blocklyScrollbarHorizontal {
+    display: block !important;
+
+    .blocklyScrollbarBackground {
+        fill: rgba(15, 23, 42, 0.25) !important;
+        rx: 6px;
+        ry: 6px;
+
+        body.theme--light & {
+            fill: rgba(0, 0, 0, 0.08) !important;
+        }
+    }
+
+    .blocklyScrollbarHandle {
+        fill: #d4af37 !important;
+        rx: 6px;
+        ry: 6px;
+        transition: fill 0.2s ease, opacity 0.2s ease;
+        opacity: 0.8;
+
+        &:hover,
+        &:active {
+            fill: #facc15 !important;
+            opacity: 1;
+        }
+
+        body.theme--light & {
+            fill: #b45309 !important;
+
+            &:hover,
+            &:active {
+                fill: #d97706 !important;
+            }
+        }
+    }
 }
 
 .injectionDiv {
@@ -31,4 +78,19 @@
     position: relative;
     touch-action: none;
     overflow: hidden;
+
+    /* Global visible scrollbar for injection viewport */
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #d4af37;
+        border-radius: 9999px;
+
+        body.theme--light & {
+            background: #b45309;
+        }
+    }
 }

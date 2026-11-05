@@ -192,7 +192,7 @@
       </block>
     </statement>
   </block>
-  <block type="after_purchase" id=",Jj+6oYc;x^lyGnx]!Cs" collapsed="true" x="1357" y="110">
+  <block type="after_purchase" id=",Jj+6oYc;x^lyGnx]!Cs" collapsed="true" x="580" y="110">
     <statement name="AFTERPURCHASE_STACK">
       <block type="controls_if" id="yV-)0m|B}ZMgyP~,mt2p">
         <value name="IF0">

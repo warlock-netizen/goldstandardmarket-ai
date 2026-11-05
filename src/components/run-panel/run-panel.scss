@@ -40,19 +40,38 @@
 
         flex-direction: column;
         height: 100%;
+        padding: 0.6rem 0.4rem;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 0.8rem;
+        margin: 0.2rem;
+        box-sizing: border-box;
+
+        body.theme--light & {
+            background: rgba(248, 250, 252, 0.9);
+            border-color: rgba(226, 232, 240, 0.95);
+        }
 
         &-title {
             min-height: 1.8rem;
             margin-bottom: 4px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #94a3b8;
 
-            @include typeface(--small-center-bold-black, none);
+            body.theme--light & {
+                color: #64748b;
+            }
         }
 
         &-content {
-            height: 18px;
-            margin-bottom: 4px;
-
-            @include typeface(--small-center-normal-black, none);
+            height: auto;
+            margin-bottom: 2px;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-prominent);
         }
     }
 
@@ -122,9 +141,37 @@
         flex-direction: column;
 
         &-button {
-            width: 318px;
-            height: 32px !important;
-            margin: 12px 24px;
+            width: calc(100% - 3.2rem) !important;
+            height: 4rem !important;
+            margin: 1.2rem 1.6rem !important;
+            border-radius: 1rem !important;
+            font-size: 1.3rem !important;
+            font-weight: 700 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.8rem !important;
+            border: 1px solid rgba(212, 175, 55, 0.4) !important;
+            background: rgba(212, 175, 55, 0.1) !important;
+            color: #d4af37 !important;
+            transition: all 0.2s ease !important;
+
+            &:hover:not(:disabled) {
+                background: #d4af37 !important;
+                color: #000000 !important;
+                box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35) !important;
+            }
+
+            body.theme--light & {
+                border-color: rgba(180, 83, 9, 0.5) !important;
+                background: rgba(180, 83, 9, 0.08) !important;
+                color: #b45309 !important;
+
+                &:hover:not(:disabled) {
+                    background: #b45309 !important;
+                    color: #ffffff !important;
+                }
+            }
         }
     }
 

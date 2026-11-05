@@ -328,7 +328,7 @@
       </block>
     </statement>
   </block>
-  <block type="after_purchase" id="X;J[40.KQm3;~jME8CR*" collapsed="true" x="1578" y="110">
+  <block type="after_purchase" id="X;J[40.KQm3;~jME8CR*" collapsed="true" x="580" y="110">
     <statement name="AFTERPURCHASE_STACK">
       <block type="controls_if" id="Ap`b`/^Es7KR.1[)5w7n">
         <mutation xmlns="http://www.w3.org/1999/xhtml" elseif="1"></mutation>

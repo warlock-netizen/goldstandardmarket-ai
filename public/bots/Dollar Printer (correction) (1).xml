@@ -344,7 +344,7 @@
       </block>
     </statement>
   </block>
-  <block type="after_purchase" id="x)}.`0_SBxJsheW92e1|" collapsed="true" x="1472" y="110">
+  <block type="after_purchase" id="x)}.`0_SBxJsheW92e1|" collapsed="true" x="580" y="110">
     <statement name="AFTERPURCHASE_STACK">
       <block type="controls_if" id="UF%w0C}l|FumB_fw#H*X">
         <mutation xmlns="http://www.w3.org/1999/xhtml" elseif="1"></mutation>

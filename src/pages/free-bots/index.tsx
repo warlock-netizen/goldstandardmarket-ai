@@ -140,11 +140,14 @@ export const FreeBots = observer(({ handleTabChange }: TFreeBotsProps) => {
             const url = `/bots/${encodeURIComponent(bot.file)}.xml`;
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load bot strategy`);
-            const xmlText = await res.text();
+            let xmlText = await res.text();
 
             if (!xmlText || !xmlText.includes('<xml')) {
                 throw new Error('Invalid strategy XML content returned from server');
             }
+
+            // Normalize outlier coordinates for after_purchase so it aligns neatly beside trade_definition
+            xmlText = xmlText.replace(/(<block[^>]*type="after_purchase"[^>]*\bx=")\d+(")/g, '$1580$2');
 
             // 3. Helper to parse and inject into Blockly workspace
             const injectXml = (ws: any): boolean => {
@@ -160,6 +163,18 @@ export const FreeBots = observer(({ handleTabChange }: TFreeBotsProps) => {
                         const dom = textToDom(xmlText);
                         (window as any).Blockly.Xml.domToWorkspace(dom, ws);
                         ws.strategy_to_load = xmlText;
+
+                        // Align and fit workspace neatly
+                        setTimeout(() => {
+                            try {
+                                (window as any).Blockly?.svgResize(ws);
+                                const mainBlock = ws.getAllBlocks(false).find((b: any) => b.type === 'trade_definition');
+                                if (mainBlock && typeof ws.centerOnBlock === 'function') {
+                                    ws.centerOnBlock(mainBlock.id);
+                                }
+                            } catch (e) {}
+                        }, 250);
+
                         return true;
                     }
                 } catch (err) {
