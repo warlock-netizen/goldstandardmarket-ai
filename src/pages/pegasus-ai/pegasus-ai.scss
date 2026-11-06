@@ -651,6 +651,11 @@
     cursor: pointer;
     user-select: none;
 
+    @media (max-width: 1024px) {
+        bottom: 7.4rem;
+        right: 1.2rem;
+    }
+
     &__pill {
         display: flex;
         align-items: center;

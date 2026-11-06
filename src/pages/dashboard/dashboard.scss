@@ -50,6 +50,12 @@
             transform: translateX(var(--translate-panel-reset)) !important;
         }
 
+        &.dc-drawer--right {
+            @include desktop-screen {
+                transform: translateX(calc(-366px + 16px)) !important;
+            }
+        }
+
         .dc-drawer__toggle-icon {
             @include is-RTL {
                 transform: rotate(calc(180deg)) !important;

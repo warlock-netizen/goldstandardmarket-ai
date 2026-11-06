@@ -185,15 +185,70 @@ const DrawerFooter = ({ is_clear_stat_disabled, onClearStatClick }: TDrawerFoote
     </div>
 );
 
-const MobileDrawerFooter = () => {
+const MobileDrawerFooter = observer(() => {
+    const { run_panel } = useStore();
+    const { is_running, has_open_contract, contract_stage, onClickSell, onStopBotClick, stopBot } = run_panel;
+    const [isExiting, setIsExiting] = React.useState(false);
+
+    const has_active_trade = is_running && (has_open_contract || contract_stage >= 2);
+
+    const handleStopTradeBeforeTarget = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsExiting(true);
+        try {
+            if (onClickSell) {
+                onClickSell();
+            }
+        } catch (err) {
+            console.warn('[MobileDrawerFooter] Could not sell contract at market:', err);
+        }
+
+        try {
+            if (onStopBotClick) {
+                onStopBotClick();
+            } else if (stopBot) {
+                stopBot();
+            }
+        } catch (err) {
+            console.warn('[MobileDrawerFooter] Could not stop bot:', err);
+        }
+
+        setTimeout(() => setIsExiting(false), 2000);
+    };
+
     return (
         <div className='controls__section'>
             <div className='controls__buttons'>
                 <TradeAnimation className='controls__animation' should_show_overlay />
+                {has_active_trade && (
+                    <button
+                        type='button'
+                        className='mobile-early-exit-btn'
+                        onClick={handleStopTradeBeforeTarget}
+                        disabled={isExiting}
+                        title='Sell open contract at market & stop bot before target'
+                    >
+                        <svg
+                            width='14'
+                            height='14'
+                            viewBox='0 0 24 24'
+                            fill='none'
+                            stroke='currentColor'
+                            strokeWidth='2.5'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                        >
+                            <circle cx='12' cy='12' r='10' />
+                            <line x1='15' y1='9' x2='9' y2='15' />
+                            <line x1='9' y1='9' x2='15' y2='15' />
+                        </svg>
+                        <span>{isExiting ? 'Exiting...' : 'Stop Trade (Exit)'}</span>
+                    </button>
+                )}
             </div>
         </div>
     );
-};
+});
 
 const StatisticsInfoModal = ({
     is_mobile,
@@ -322,23 +377,24 @@ const RunPanel = observer(() => {
 
     return (
         <>
-            <div className='run-panel'>
+            <div className={!isDesktop && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
                 <Drawer
-                    anchor='right'
+                    anchor={isDesktop ? 'right' : 'left'}
                     className={classNames('run-panel', {
-                        'run-panel__container': true,
+                        'run-panel__container': isDesktop,
                         'run-panel__container--tour-active': isDesktop && active_tour,
                     })}
                     contentClassName='run-panel__content'
                     header={header}
-                    footer={is_drawer_open ? footer : undefined}
+                    footer={isDesktop && is_drawer_open ? footer : undefined}
                     is_open={is_drawer_open}
                     toggleDrawer={toggleDrawer}
-                    width={isDesktop ? 366 : 330}
+                    width={366}
                     zIndex={popover_zindex.RUN_PANEL}
                 >
                     {content}
                 </Drawer>
+                {!isDesktop && <MobileDrawerFooter />}
             </div>
 
             <StatisticsInfoModal

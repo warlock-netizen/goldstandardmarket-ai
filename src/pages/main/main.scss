@@ -201,7 +201,7 @@
     &__run-strategy-wrapper {
         inset-inline-end: 1.6rem;
         top: 1.6rem;
-        z-index: 2;
+        z-index: 50;
 
         @include desktop-screen {
             position: absolute;
@@ -380,7 +380,7 @@
     &__run-strategy-wrapper {
         inset-inline-end: 1.6rem;
         top: 1.6rem;
-        z-index: 2;
+        z-index: 50;
 
         @include desktop-screen {
             position: absolute;
@@ -411,13 +411,13 @@
 
 .bot-builder {
     position: absolute;
-    top: 6.6rem;
+    top: 11.4rem;
     inset-inline-start: 1.6rem;
     inset-inline-end: 1.6rem;
     width: calc(100% - 3.2rem);
     z-index: -1;
     background: var(--general-main-1);
-    height: var(--tab-content-height);
+    height: calc(100vh - 13.5rem);
 
     .injectionDiv {
         .blocklyTrash {
