@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 /* [AI] - Analytics removed - rudderstack event tracking removed */
 /* [/AI] */
 import ChunkLoader from '@/components/loader/chunk-loader';
+import { DBOT_TABS } from '@/constants/bot-contents';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
 import { useSmartChartAdaptor } from '@/hooks/useSmartChartAdaptor';
 import { useStore } from '@/hooks/useStore';
@@ -94,6 +95,22 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
             })}
             dir='ltr'
         >
+            {/* GSM Scanner Synchronized Pill */}
+            <div className="chart-scanner-sync-bar">
+                <div className="chart-scanner-sync-bar__left">
+                    <span className="chart-scanner-sync-bar__dot" />
+                    <span className="chart-scanner-sync-bar__label">GSM SCANNER SYNCED</span>
+                    <span className="chart-scanner-sync-bar__sym">{symbol}</span>
+                </div>
+                <button
+                    className="chart-scanner-sync-bar__btn"
+                    onClick={() => dashboard.setActiveTab(DBOT_TABS.PEGASUS_AI)}
+                    title="Open Pegasus AI Scanner"
+                >
+                    <span>⚡ AI Scanner</span>
+                </button>
+            </div>
+
             <SmartChart
                 id={`dbot-${symbol}`}
                 key={`chart-${symbol}`}
